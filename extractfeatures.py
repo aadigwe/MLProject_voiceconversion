@@ -40,22 +40,39 @@ def get_labels(path=Data_Directory):
 	label_indices = np.arange(0, len(labels))
 	return labels, label_indices, np_utils.to_categorical(label_indices)
 
-def save_fundfreq_to_array(path = Data_Directory):
+def save_features_to_array(path = Data_Directory):
 	labels, _, _ = get_labels(path)
 	print(labels)
 	for label in labels:
 		fundfreq_vectors = []
+		ap_vectors = []
+		mfcc_vectors = []
+		sp_vectors = []
+
 		wavfiles = [path + label + '/' + wavfile for wavfile in os.listdir(path + '/' + label)]
 		for wavfile in wavfiles:
 			print(wavfile)
 			x, fs = sf.read(wavfile)
+
 			_f0, t = pw.dio(x, fs)
-			x, fs = sf.read(path)
 			f0 = pw.stonemask(x, _f0, t, fs)
 			fundfreq_vectors.append(f0)
-		np.save(label + '.npy', fundfreq_vectors)
 
-save_fundfreq_to_array(Data_Directory)
+			sp = pw.cheaptrick(x, f0, t, fs)
+			sp_vectors.append(sp)
+
+			ap = pw.d4c(x, f0, t, fs)
+			ap_vectors.append(ap)
+
+			mfcc = librosa.feature.mfcc(x, sr=16000)
+			mfcc_vectors.append(mfcc)
+
+		np.save('fundfreq_' + label + '.npy', fundfreq_vectors)
+		np.save('sp_' + label + '.npy', sp_vectors)
+		np.save('ap_' + label + '.npy', ap_vectors)
+		np.save('mfcc_' + label + '.npy', mfcc_vectors)
+
+save_features_to_array(Data_Directory)
 
 #B. LOOP to extract vector by sample of target fundamental frequency
 
@@ -63,11 +80,9 @@ save_fundfreq_to_array(Data_Directory)
 
 ##############################################################
 
-#A. LOOP to extract vector by sample of source MFCC
+#A. LOOP to extract vector by sample of target MFCC
 
-#B. LOOP to extract vector by sample of target MFCC
-
-#C. Perform Linear Regression
+#B. Perform Linear Regression
 
 ##############################################################
 
