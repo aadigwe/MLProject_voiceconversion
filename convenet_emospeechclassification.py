@@ -23,7 +23,7 @@ def wav2mfcc(file_path, max_pad_len=120):
 	return mfcc
 
 
-DATA_PATH = "Data/"
+DATA_PATH = "features/mfcc"
 
 #A. Get Labels
 def get_labels(path=DATA_PATH):
@@ -60,12 +60,12 @@ def save_data_to_array(path=DATA_PATH, max_pad_len=60):
 from sklearn.model_selection import train_test_split
 def get_train_test(split_ratio=0.6, random_state=42):
     labels, indices, _ = get_labels(DATA_PATH)
-    X = np.load(labels[0] + '.npy')
+    X = np.load('features/mfcc/' + labels[0])
     y = np.zeros(X.shape[0])
 
     # Append all of the dataset into one single array, same goes for y
     for i, label in enumerate(labels[1:]):
-        x = np.load(label + '.npy')
+        x = np.load('features/mfcc/' + label)
         X = np.vstack((X, x))
         y = np.append(y, np.full(x.shape[0], fill_value= (i + 1)))
 
@@ -88,7 +88,7 @@ X_test = X_test.reshape(X_test.shape[0], 20, 120, 1)
 y_train_hot = np_utils.to_categorical(y_train)
 y_test_hot = np_utils.to_categorical(y_test)
 
-
+"""
 
 model = Sequential()
 model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 120, 1)))
@@ -97,7 +97,7 @@ model.add(Dropout(0.25))
 model.add(Flatten())
 model.add(Dense(128, activation='relu'))
 model.add(Dropout(0.25))
-model.add(Dense(2, activation='softmax'))
+model.add(Dense(5, activation='softmax')) # number of output class
 model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adadelta(),
               metrics=['accuracy'])
@@ -108,9 +108,18 @@ model.fit(X_train, y_train_hot, batch_size=100, epochs=200, verbose=1, validatio
 
 
 model.save('my_model.h5')
+"""
+
+
+model = load_model('my_model.h5')
+
+
+score, acc = model.evaluate(X_test, y_test_hot, batch_size=100)
+print('Test score:', score)
+print('Test accuracy', acc)
 
 # Getting the MFCC
-sample = wav2mfcc('Data/anger/anger_0528.wav')
+sample = wav2mfcc('/Users/jdiep/Documents/EmoV-DB_sorted/jenie/sleepy/sleepiness_477-504_0499.wav')
 print(sample)
 print(sample.shape)
 # We need to reshape it remember?
