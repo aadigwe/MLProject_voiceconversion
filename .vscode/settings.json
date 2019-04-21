@@ -1,0 +1,5 @@
+{
+    "python.linting.pylintEnabled": true,
+    "python.pythonPath": "/anaconda3/envs/mlfinal/bin/python",
+    "git.ignoreLimitWarning": true
+}
