@@ -60,39 +60,36 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.utils import to_categorical
 
 
+#X_train, X_test, y_train, y_test = get_train_test()
+#X_train = X_train.reshape(X_train.shape[0], 20, 200, 1)
+#X_test = X_test.reshape(X_test.shape[0], 20, 200, 1)
+#y_train_hot = np_utils.to_categorical(y_train)
+#y_test_hot = np_utils.to_categorical(y_test)
+
 X_train, X_test, y_train, y_test = get_train_test()
-X_train = X_train.reshape(X_train.shape[0], 20, 200, 1)
-X_test = X_test.reshape(X_test.shape[0], 20, 200, 1)
+X_train = X_train.reshape(X_train.shape[0], 20*200)
+X_test = X_test.reshape(X_test.shape[0], 20*200)
 y_train_hot = np_utils.to_categorical(y_train)
 y_test_hot = np_utils.to_categorical(y_test)
 
-#D. Build the CNN model
-def create_cnn():
+# D. Build a basic NN model
+
+def basic_nn():
     model = Sequential()
-    model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 200, 1)))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dense(128, activation='relu', input_dim=4000))
     model.add(Dropout(0.25))
-    model.add(Flatten())
     model.add(Dense(128, activation='relu'))
     model.add(Dropout(0.25))
-    model.add(Dense(5, activation='softmax')) # number of output class
+    model.add(Dense(5, activation='softmax'))
     model.compile(loss=keras.losses.categorical_crossentropy,
-                optimizer=keras.optimizers.Adadelta(),
+                optimizer=keras.optimizers.adam(),
                 metrics=['accuracy'])
-    print(X_train.shape)
-    print(y_train_hot.shape)
-
     model.fit(X_train, y_train_hot, batch_size=100, epochs=200, verbose=1, validation_data=(X_test, y_test_hot))
     model.save('basic_nn_model.h5')
     return model
 
-def basic_nn():
-    model = Sequential()
-    model.add(Dense(128, activation='relu'))
-    model.add(Dense)
-
+#bnn = basic_nn()
 model = load_model('basic_nn_model.h5')
-
 
 score, acc = model.evaluate(X_test, y_test_hot, batch_size=100)
 print('Test score:', score)
@@ -102,21 +99,21 @@ print('Test accuracy', acc)
 import csv
 def predict_emotion():
     PREDICTION_PATH = "prediction/"
-    with open('predictions.csv', 'w') as csvfile:
+    with open('predictions_bnn.csv', 'w') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         filewriter.writerow(['Filename','Emotion Prediction','Shape'])
         for sample in os.listdir(PREDICTION_PATH):
             mfcc = wav2mfcc(PREDICTION_PATH + sample)
             shape = mfcc.shape
             # We need to reshape it remember?
-            sample_reshaped = mfcc.reshape(1, 20, 200, 1)
+            sample_reshaped = mfcc.reshape(1, 4000)
             # Perform forward pass
             emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
             emotion = emotion[:-4]
             print(sample + ":" + str(shape) + "," + emotion)
             filewriter.writerow([sample, emotion, shape])
 
-#predict_emotion()
+predict_emotion()
 
 
 
