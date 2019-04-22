@@ -14,7 +14,7 @@ from keras.models import load_model
 
 
 
-def wav2mfcc(file_path, max_pad_len=120):
+def wav2mfcc(file_path, max_pad_len=200):
 	wave, sr = librosa.load(file_path, mono=True, sr=None)
 	wave = wave[::3]
 	mfcc = librosa.feature.mfcc(wave, sr=16000)
@@ -107,7 +107,7 @@ def create_cnn():
     model.save('my_model.h5')
     return model
 
-cnn = create_cnn()
+#cnn = create_cnn()
 model = load_model('my_model.h5')
 
 
@@ -119,16 +119,21 @@ print('Test accuracy', acc)
 import csv
 def predict_emotion():
     PREDICTION_PATH = "prediction/"
-    for sample in os.listdir(PREDICTION_PATH):
-        mfcc = wav2mfcc(PREDICTION_PATH + sample)
-        shape = mfcc.shape
-        # We need to reshape it remember?
-        sample_reshaped = mfcc.reshape(1, 20, 200, 1)
-        # Perform forward pass
-        emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
-        print(sample + ":" + str(shape) + "," + emotion)
+    with open('predictions.csv', 'w') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        filewriter.writerow(['Filename','Emotion Prediction','Shape'])
+        for sample in os.listdir(PREDICTION_PATH):
+            mfcc = wav2mfcc(PREDICTION_PATH + sample)
+            shape = mfcc.shape
+            # We need to reshape it remember?
+            sample_reshaped = mfcc.reshape(1, 20, 200, 1)
+            # Perform forward pass
+            emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
+            emotion = emotion[:-4]
+            print(sample + ":" + str(shape) + "," + emotion)
+            filewriter.writerow([sample, emotion, shape])
 
-# predict_emotion()
+predict_emotion()
 
 
 
