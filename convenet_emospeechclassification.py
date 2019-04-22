@@ -134,8 +134,3 @@ def predict_emotion():
             filewriter.writerow([sample, emotion, shape])
 
 predict_emotion()
-
-
-
-
-
