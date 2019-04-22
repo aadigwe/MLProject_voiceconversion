@@ -88,28 +88,25 @@ X_test = X_test.reshape(X_test.shape[0], 20, 120, 1)
 y_train_hot = np_utils.to_categorical(y_train)
 y_test_hot = np_utils.to_categorical(y_test)
 
-"""
 
-model = Sequential()
-model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 120, 1)))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.25))
-model.add(Dense(5, activation='softmax')) # number of output class
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
-              metrics=['accuracy'])
-print(X_train.shape)
-print(y_train_hot.shape)
+def create_cnn():
+    model = Sequential()
+    model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 120, 1)))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.25))
+    model.add(Dense(5, activation='softmax')) # number of output class
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                optimizer=keras.optimizers.Adadelta(),
+                metrics=['accuracy'])
+    print(X_train.shape)
+    print(y_train_hot.shape)
 
-model.fit(X_train, y_train_hot, batch_size=100, epochs=200, verbose=1, validation_data=(X_test, y_test_hot))
-
-
-model.save('my_model.h5')
-"""
-
+    model.fit(X_train, y_train_hot, batch_size=100, epochs=200, verbose=1, validation_data=(X_test, y_test_hot))
+    model.save('my_model.h5')
+    return model
 
 model = load_model('my_model.h5')
 
@@ -118,17 +115,19 @@ score, acc = model.evaluate(X_test, y_test_hot, batch_size=100)
 print('Test score:', score)
 print('Test accuracy', acc)
 
-# Getting the MFCC
-sample = wav2mfcc('/Users/jdiep/Documents/EmoV-DB_sorted/jenie/sleepy/sleepiness_477-504_0499.wav')
-print(sample)
-print(sample.shape)
-# We need to reshape it remember?
-sample_reshaped = sample.reshape(1, 20, 120, 1)
-# Perform forward pass
-print(get_labels()[0][
-    np.argmax(model.predict(sample_reshaped))
-])
-# Output: 'happy'
+# E. Predict on Reserved Data Set
+def predict_emotion():
+    PREDICTION_PATH = "prediction"
+    sample = wav2mfcc('/Users/jdiep/Documents/EmoV-DB_sorted/jenie/sleepy/sleepiness_477-504_0499.wav')
+    print(sample)
+    print(sample.shape)
+    # We need to reshape it remember?
+    sample_reshaped = sample.reshape(1, 20, 120, 1)
+    # Perform forward pass
+    print(get_labels()[0][
+        np.argmax(model.predict(sample_reshaped))
+    ])
+    # Output: 'happy'
 
 
 
