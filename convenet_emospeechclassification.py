@@ -108,6 +108,7 @@ def create_cnn():
     model.save('my_model.h5')
     return model
 
+cnn = create_cnn()
 model = load_model('my_model.h5')
 
 
@@ -127,10 +128,8 @@ def predict_emotion():
         # Perform forward pass
         emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
         print(sample + ":" + str(shape) + "," + emotion)
-        
 
-
-predict_emotion()
+# predict_emotion()
 
 
 
