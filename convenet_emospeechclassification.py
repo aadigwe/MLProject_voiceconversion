@@ -70,7 +70,6 @@ def get_train_test(split_ratio=0.6, random_state=42):
         y = np.append(y, np.full(x.shape[0], fill_value= (i + 1)))
 
     assert X.shape[0] == len(y)
-
     return train_test_split(X, y, test_size= (1 - split_ratio), random_state=random_state, shuffle=True)
 
 
@@ -83,15 +82,15 @@ from keras.utils import to_categorical
 
 
 X_train, X_test, y_train, y_test = get_train_test()
-X_train = X_train.reshape(X_train.shape[0], 20, 120, 1)
-X_test = X_test.reshape(X_test.shape[0], 20, 120, 1)
+X_train = X_train.reshape(X_train.shape[0], 20, 200, 1)
+X_test = X_test.reshape(X_test.shape[0], 20, 200, 1)
 y_train_hot = np_utils.to_categorical(y_train)
 y_test_hot = np_utils.to_categorical(y_test)
 
 
 def create_cnn():
     model = Sequential()
-    model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 120, 1)))
+    model.add(Conv2D(32, kernel_size=(2,2), activation = 'relu', input_shape = (20, 200, 1)))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
     model.add(Flatten())
@@ -124,7 +123,7 @@ def predict_emotion():
         mfcc = wav2mfcc(PREDICTION_PATH + sample)
         shape = mfcc.shape
         # We need to reshape it remember?
-        sample_reshaped = mfcc.reshape(1, 20, 120, 1)
+        sample_reshaped = mfcc.reshape(1, 20, 200, 1)
         # Perform forward pass
         emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
         print(sample + ":" + str(shape) + "," + emotion)
