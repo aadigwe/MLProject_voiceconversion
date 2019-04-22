@@ -13,7 +13,7 @@ from keras.models import load_model
 
 
 
-def wav2mfcc(file_path, max_pad_len=120):
+def wav2mfcc(file_path, max_pad_len=200):
 	wave, sr = librosa.load(file_path, mono=True, sr=None)
 	wave = wave[::3]
 	mfcc = librosa.feature.mfcc(wave, sr=16000)
@@ -35,7 +35,7 @@ print(label_indices,)
 print(categories)
 
 #B. Save MFCCs to .npy files
-def save_data_to_array(path=DATA_PATH, max_pad_len=60):
+def save_data_to_array(path=DATA_PATH, max_pad_len=200):
     labels, _, _ = get_labels(path)
     for label in labels:
         # Init mfcc vectors
@@ -74,50 +74,65 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Dropout
+from keras.layers import Flatten
 
 X_train, X_test, y_train, y_test = get_train_test()
-#X_train = X_train.reshape(X_train.shape[0], 20, 200, 1)
-#X_test = X_test.reshape(X_test.shape[0], 20, 200, 1)
+#X_train = X_train.reshape(X_train.shape[0], 20*200)
+#X_test = X_test.reshape(X_test.shape[0], 20*200)
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+print(X_train.shape[1])
+
+data_dim = 4000
+timesteps = 1
+num_classes = 5
+
+X_train = np.reshape(X_train, (X_train.shape[0], timesteps, 4000)) #X.reshape(samples, timesteps, features)
+X_test = np.reshape(X_test, (X_test.shape[0], timesteps, 4000)) 
 y_train_hot = np_utils.to_categorical(y_train)
 y_test_hot = np_utils.to_categorical(y_test)
 
-'''
 
-regressor = Sequential()
-regressor.add(LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
-regressor.add(Dropout(0.2))
-regressor.add(LSTM(units = 50, return_sequences = True))
-regressor.add(Dropout(0.2))
-regressor.add(LSTM(units = 50, return_sequences = True))
-regressor.add(Dropout(0.2))
-regressor.add(LSTM(units = 50))
-regressor.add(Dropout(0.2))
-regressor.add(Dense(units = 1))
-regressor.compile(optimizer = 'adam', loss = 'mean_squared_error')
-regressor.fit(X_train, y_train, epochs = 200, batch_size = 100, validation_data=(X_test, y_test_hot))
-
-model.save('rnn_model.h5')
-score, acc = model.evaluate(X_test, y_test_hot, batch_size=100)
-print('Test score:', score)
-print('Test accuracy:', acc)
-'''
-
-model = Sequential()
-
-# Adding the first LSTM layer and some Dropout regularisation
-model.add(LSTM(units = 50, return_sequences = True, input_shape = (X_train.shape[1], 1)))
-model.add(Dropout(0.2))
-
-model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-model.add(Dense(5, activation='softmax'))
-model.compile(loss=keras.losses.categorical_crossentropy,
+def recurrent_nn():
+    model = Sequential()
+    model.add(LSTM(units=150,input_shape=(timesteps, data_dim),return_sequences=True))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(5, activation='softmax'))
+    model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adadelta(),
               metrics=['accuracy'])
-#print(model.summary())
-model.fit(X_train, y_train_hot, epochs=3, batch_size=24)
-# Final evaluation of the model
-scores = model.evaluate(X_test, y_test_hot, verbose=0)
-print("Accuracy: %.2f%%" % (scores[1]*100))
+    model.fit(X_train, y_train_hot, batch_size=100, epochs=200, verbose=1, validation_data=(X_test, y_test_hot))
+    model.save('rnn_model.h5')
+    return model
 
-model.save('rnn_model.h5')
+rnn = recurrent_nn()
 
+score, acc = model.evaluate(X_test, y_test_hot, batch_size=100)
+print('Test score:', score)
+print('Test accuracy', acc)
+
+model = load_model('rnn_model.h5')
+
+
+# E. Predict on Reserved Data Set
+import csv
+def predict_emotion():
+    PREDICTION_PATH = "../prediction/"
+    with open('predictions_rnn.csv', 'w') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        filewriter.writerow(['Filename','Emotion Prediction','Shape'])
+        for sample in os.listdir(PREDICTION_PATH):
+            mfcc = wav2mfcc(PREDICTION_PATH + sample)
+            shape = mfcc.shape
+            # We need to reshape it remember?
+            sample_reshaped = mfcc.reshape(1, timesteps, 4000)
+            # Perform forward pass
+            emotion = get_labels()[0][np.argmax(model.predict(sample_reshaped))]
+            emotion = emotion[:-4]
+            print(sample + ":" + str(shape) + "," + emotion)
+            filewriter.writerow([sample, emotion, shape])
+
+predict_emotion()
